@@ -270,9 +270,7 @@ async def test_public_overview_and_frontend_pages(
     assert performance["db_health"]["error_events"] >= 1
     assert performance["watchdog_running_samples"] >= 1
     assert performance["top_requests"][0]["cache_hit_rate"] == 0.5
-    assert performance["top_requests"][0]["base_urls"] == [
-        "https://api.example.com/v1"
-    ]
+    assert "base_urls" not in performance["top_requests"][0]
     assert "avg_errors_per_heartbeat" in payload["heartbeat_timeline_24h"][-1]
 
     page_response = await telemetry_client.get("/_cloud_telemetry/")

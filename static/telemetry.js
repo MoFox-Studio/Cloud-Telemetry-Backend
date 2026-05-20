@@ -195,10 +195,11 @@ function renderPublic(data = state.overview) {
     </main>`;
 }
 
-function requestTable(rows) {
+function requestTable(rows, { showBaseUrls = false } = {}) {
   if (!rows.length) return '<div class="empty">暂无 LLM 聚合数据</div>';
+  const baseUrlHead = showBaseUrls ? '<th>Base URL</th>' : '';
   return `<div class="table-wrap"><table>
-    <thead><tr><th>Request name</th><th>请求数</th><th>Token</th><th>平均耗时</th><th>缓存命中</th><th>成功率</th><th>Base URL</th></tr></thead>
+    <thead><tr><th>Request name</th><th>请求数</th><th>Token</th><th>平均耗时</th><th>缓存命中</th><th>成功率</th>${baseUrlHead}</tr></thead>
     <tbody>${rows.map((row) => `<tr>
       <td class="mono">${esc(row.request_name)}</td>
       <td>${fmtNum(row.request_count)}</td>
@@ -206,7 +207,7 @@ function requestTable(rows) {
       <td>${Number(row.average_latency || 0).toFixed(2)}s</td>
       <td>${fmtPct(row.cache_hit_rate)}</td>
       <td>${fmtPct(row.success_rate)}</td>
-      <td>${esc((row.base_urls || []).join(', ') || '-')}</td>
+      ${showBaseUrls ? `<td>${esc((row.base_urls || []).join(', ') || '-')}</td>` : ''}
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
@@ -382,7 +383,7 @@ function renderAdmin() {
       </div>
       <div class="panel">
         <div class="section-head"><div><h3>高消耗请求</h3><p>包含每个 request name 的缓存命中率</p></div></div>
-        ${requestTable(perf.top_requests || [])}
+        ${requestTable(perf.top_requests || [], { showBaseUrls: true })}
       </div>
     </section>
 
@@ -437,7 +438,7 @@ function detailPanel(detail) {
         <textarea id="suspend-reason" placeholder="封禁原因，便于审计和团队协作">${esc(detail.suspension_reason || '')}</textarea>
       </div>
       <div>
-        ${requestTable(perf)}
+        ${requestTable(perf, { showBaseUrls: true })}
       </div>
     </div>
     <div class="section grid-2">

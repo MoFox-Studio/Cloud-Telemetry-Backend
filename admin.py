@@ -209,7 +209,10 @@ class CloudTelemetryAdminService:
             "diagnostic_breakdown_24h": {
                 _coerce_label(row.severity): int(row.cnt) for row in diagnostic_rows
             },
-            "performance_24h": _summarize_window_performance(recent_windows),
+            "performance_24h": _summarize_window_performance(
+                recent_windows,
+                include_base_urls=False,
+            ),
             "heartbeat_timeline_24h": _build_window_timeline(
                 recent_windows,
                 diagnostics=diagnostics,
@@ -673,6 +676,8 @@ def _empty_hour_buckets(*, now: float, hours: int = 24) -> list[dict[str, Any]]:
 
 def _summarize_window_performance(
     windows: list[CloudTelemetryHeartbeatWindow],
+    *,
+    include_base_urls: bool = True,
 ) -> dict[str, Any]:
     request_buckets: dict[str, dict[str, Any]] = {}
     latency_weighted = 0.0
@@ -787,7 +792,7 @@ def _summarize_window_performance(
     top_requests = []
     for bucket in request_buckets.values():
         count = int(bucket["request_count"])
-        top_requests.append({
+        top_request = {
             "request_name": bucket["request_name"],
             "request_count": count,
             "total_tokens": int(bucket["total_tokens"]),
@@ -795,8 +800,10 @@ def _summarize_window_performance(
             "success_rate": bucket["success_weighted"] / count if count else 0.0,
             "cache_hit_rate": bucket["cache_weighted"] / count if count else 0.0,
             "models": sorted(bucket["models"]),
-            "base_urls": sorted(bucket["base_urls"]),
-        })
+        }
+        if include_base_urls:
+            top_request["base_urls"] = sorted(bucket["base_urls"])
+        top_requests.append(top_request)
 
     top_requests.sort(key=lambda item: int(item["total_tokens"]), reverse=True)
     health_domains = sorted(
