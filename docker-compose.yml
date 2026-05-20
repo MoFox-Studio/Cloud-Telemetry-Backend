@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cloud-telemetry-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${CLOUD_TELEMETRY_POSTGRESQL_DATABASE:-mofox_cloud_telemetry}
+      POSTGRES_USER: ${CLOUD_TELEMETRY_POSTGRESQL_USER:-postgres}
+      POSTGRES_PASSWORD: ${CLOUD_TELEMETRY_POSTGRESQL_PASSWORD:-postgres}
+    volumes:
+      - cloud-telemetry-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${CLOUD_TELEMETRY_POSTGRESQL_USER:-postgres} -d ${CLOUD_TELEMETRY_POSTGRESQL_DATABASE:-mofox_cloud_telemetry}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  cloud-telemetry-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloud-telemetry-backend
+    env_file:
+      - .env
+    environment:
+      CLOUD_TELEMETRY_DATABASE_TYPE: postgresql
+      CLOUD_TELEMETRY_POSTGRESQL_HOST: postgres
+      CLOUD_TELEMETRY_POSTGRESQL_PORT: "5432"
+      CLOUD_TELEMETRY_POSTGRESQL_DATABASE: ${CLOUD_TELEMETRY_POSTGRESQL_DATABASE:-mofox_cloud_telemetry}
+      CLOUD_TELEMETRY_POSTGRESQL_USER: ${CLOUD_TELEMETRY_POSTGRESQL_USER:-postgres}
+      CLOUD_TELEMETRY_POSTGRESQL_PASSWORD: ${CLOUD_TELEMETRY_POSTGRESQL_PASSWORD:-postgres}
+      CLOUD_TELEMETRY_POSTGRESQL_SCHEMA: ${CLOUD_TELEMETRY_POSTGRESQL_SCHEMA:-cloud_telemetry}
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  cloud-telemetry-pgdata:
