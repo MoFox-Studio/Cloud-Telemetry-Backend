@@ -27,6 +27,9 @@ packages = ["cloud_telemetry_backend"]
 [tool.setuptools.package-dir]
 cloud_telemetry_backend = "."
 
+[tool.setuptools.package-data]
+cloud_telemetry_backend = ["static/*.css", "static/*.js"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

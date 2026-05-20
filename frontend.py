@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from importlib.resources import files
 
 from fastapi.responses import HTMLResponse, Response
 
-_STATIC_DIR = Path(__file__).with_name("static")
-
-
 def _asset_text(name: str) -> str:
-    return (_STATIC_DIR / name).read_text(encoding="utf-8")
+    return files("cloud_telemetry_backend").joinpath("static", name).read_text(
+        encoding="utf-8"
+    )
 
 
 def render_public_page(prefix: str) -> HTMLResponse:
