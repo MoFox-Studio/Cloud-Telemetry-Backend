@@ -16,6 +16,7 @@ from cloud_telemetry_backend.models import (
     CloudTelemetryInstanceSnapshot,
 )
 from cloud_telemetry_backend.scanner import OfflineDeadlineScanner
+from cloud_telemetry_backend.settings import CloudTelemetryBackendSettings
 
 PREFIX = "/_cloud_telemetry/api"
 
@@ -136,3 +137,13 @@ def test_geoip_resolver_handles_invalid_ip_gracefully() -> None:
     assert resolver.lookup("not-an-ip") == GeoLookupResult(None, None)
     assert resolver.lookup("") == GeoLookupResult(None, None)
     assert resolver.lookup(None) == GeoLookupResult(None, None)
+
+
+def test_settings_default_geoip_path_uses_repo_root_database_when_present() -> None:
+    """默认配置应在根目录 mmdb 存在时启用，否则保持空。"""
+
+    settings = CloudTelemetryBackendSettings.from_env({})
+    if settings.geoip_database_path:
+        assert settings.geoip_database_path.endswith("GeoLite2-City.mmdb")
+    else:
+        assert settings.geoip_database_path == ""

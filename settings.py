@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+from pathlib import Path
 from typing import Mapping
 
 from .config import CloudTelemetryStorageConfig
@@ -41,6 +42,15 @@ def _parse_csv(raw_value: str | None) -> tuple[str, ...]:
     return tuple(item.strip() for item in raw_value.split(",") if item.strip())
 
 
+def _default_geoip_database_path() -> str:
+    """Return the repo-root GeoLite2 database path when it exists."""
+
+    candidate = Path(__file__).resolve().parent.parent / "GeoLite2-City.mmdb"
+    if candidate.exists():
+        return str(candidate)
+    return ""
+
+
 @dataclass(slots=True)
 class CloudTelemetryBackendSettings:
     """云端遥测独立后端配置。"""
@@ -64,7 +74,7 @@ class CloudTelemetryBackendSettings:
     gap_recovery_window: int = 50
     instance_detail_max_windows: int = 50
     instance_detail_max_diagnostic_events: int = 50
-    geoip_database_path: str = ""
+    geoip_database_path: str = _default_geoip_database_path()
     database_type: str = "sqlite"
     sqlite_path: str = "data/cloud_telemetry/cloud_telemetry.db"
     postgresql_host: str = "localhost"
