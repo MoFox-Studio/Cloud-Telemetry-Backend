@@ -172,7 +172,6 @@ class CloudTelemetryAdminService:
                     select(CloudTelemetryHeartbeatWindow)
                     .where(CloudTelemetryHeartbeatWindow.received_at >= day_ago)
                     .order_by(CloudTelemetryHeartbeatWindow.received_at.desc())
-                    .limit(800)
                 )
             ).scalars().all()
             diagnostic_rows = (
@@ -240,7 +239,6 @@ class CloudTelemetryAdminService:
                     select(CloudTelemetryDiagnosticEvent)
                     .where(CloudTelemetryDiagnosticEvent.received_at >= day_ago)
                     .order_by(CloudTelemetryDiagnosticEvent.received_at.desc())
-                    .limit(800)
                 )
             ).scalars().all()
 
