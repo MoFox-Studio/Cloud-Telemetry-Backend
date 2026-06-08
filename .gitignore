@@ -85,3 +85,5 @@ poetry.lock
 # Project-specific
 /.pytest_cache/
 /tests/__pycache__/
+
+.env
