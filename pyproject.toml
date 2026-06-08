@@ -28,7 +28,7 @@ packages = ["cloud_telemetry_backend"]
 cloud_telemetry_backend = "."
 
 [tool.setuptools.package-data]
-cloud_telemetry_backend = ["static/*"]
+cloud_telemetry_backend = ["static/*", "GeoLite2-City.mmdb"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
