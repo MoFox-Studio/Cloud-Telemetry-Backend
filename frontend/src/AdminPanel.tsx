@@ -821,7 +821,7 @@ export default function AdminPanel({ apiPrefix }: AdminPanelProps) {
 
           {/* TAB 2: INSTANCES LIST MANAGEMENT */}
           {currentTab === 'instances' && (
-            <div className="panel" style={{ flex: 1 }}>
+            <div className="panel" style={{ flex: 1, minHeight: 0 }}>
               {/* Dynamic Filter panel */}
               <div className="filter-bar">
                 <div className="search-input-wrapper">
@@ -866,7 +866,7 @@ export default function AdminPanel({ apiPrefix }: AdminPanelProps) {
               </div>
 
               {/* Data Table */}
-              <div className="panel-body no-padding" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div className="panel-body no-padding" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <div className="table-wrapper" style={{ flex: 1 }}>
                   <table className="admin-table">
                     <thead>
@@ -1004,7 +1004,7 @@ export default function AdminPanel({ apiPrefix }: AdminPanelProps) {
 
           {/* TAB 3: DIAGNOSTICS GLOBAL LOGS VIEW */}
           {currentTab === 'diagnostics' && (
-            <div className="panel" style={{ flex: 1 }}>
+            <div className="panel" style={{ flex: 1, minHeight: 0 }}>
               <div className="panel-header">
                 <div className="panel-header-title">
                   <h3>最近拦截异常与警告诊断日志</h3>
@@ -1012,7 +1012,7 @@ export default function AdminPanel({ apiPrefix }: AdminPanelProps) {
                 </div>
               </div>
               
-              <div className="panel-body no-padding" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div className="panel-body no-padding" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <div className="table-wrapper" style={{ flex: 1 }}>
                   <table className="admin-table">
                     <thead>

@@ -114,6 +114,19 @@ button, input, select, textarea {
   animation: fadeIn 0.4s ease-out;
 }
 
+body[data-page="admin"] {
+  overflow: hidden;
+}
+
+body[data-page="admin"] .telemetry-app {
+  width: 100vw;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+}
+
 /* Topbar Header */
 .topbar {
   display: flex;
@@ -537,6 +550,7 @@ button, input, select, textarea {
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
 }
 .admin-table {
   width: 100%;
