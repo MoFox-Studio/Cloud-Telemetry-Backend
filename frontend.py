@@ -12,6 +12,10 @@ def _asset_text(name: str) -> str:
     )
 
 
+def _asset_bytes(name: str) -> bytes:
+    return files("cloud_telemetry_backend").joinpath("static", name).read_bytes()
+
+
 def render_public_page(prefix: str) -> HTMLResponse:
     return HTMLResponse(_render_shell(prefix=prefix, page="public"))
 
@@ -21,8 +25,16 @@ def render_admin_page(prefix: str) -> HTMLResponse:
 
 
 def render_frontend_asset(name: str) -> Response:
-    media_type = "text/css" if name.endswith(".css") else "application/javascript"
-    return Response(_asset_text(name), media_type=media_type)
+    if name.endswith(".png"):
+        media_type = "image/png"
+        body = _asset_bytes(name)
+    elif name.endswith(".geojson"):
+        media_type = "application/json"
+        body = _asset_text(name)
+    else:
+        media_type = "text/css" if name.endswith(".css") else "application/javascript"
+        body = _asset_text(name)
+    return Response(body, media_type=media_type)
 
 
 def _render_shell(*, prefix: str, page: str) -> str:

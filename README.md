@@ -21,6 +21,17 @@
 
 ## 快速启动（本地，SQLite）
 
+前端构建（需要 Node.js）：
+
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+启动后端：
+
 ```bash
 python -m venv .venv
 .venv\Scripts\python -m pip install -e .

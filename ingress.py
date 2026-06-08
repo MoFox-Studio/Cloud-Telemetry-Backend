@@ -637,6 +637,8 @@ class CloudTelemetryIngressService:
             snapshot.updated_at = now
 
             instance.updated_at = now
+            if payload.app_version:
+                instance.app_version = payload.app_version
             if country_code is not None:
                 instance.country_code = country_code
             if region_code is not None:
@@ -790,9 +792,17 @@ class CloudTelemetryIngress:
         async def admin_dashboard():
             return render_admin_page(prefix)
 
+        @router.get("/logo.png")
+        async def logo_asset():
+            return render_frontend_asset("logo.png")
+
+        @router.get("/countries.geojson")
+        async def geojson_asset():
+            return render_frontend_asset("countries.geojson")
+
         @router.get("/assets/{asset_name}")
         async def frontend_asset(asset_name: str):
-            if asset_name not in {"telemetry.css", "telemetry.js"}:
+            if asset_name not in {"telemetry.css", "telemetry.js", "logo.png"}:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
             return render_frontend_asset(asset_name)
 

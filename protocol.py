@@ -102,6 +102,7 @@ class CloudTelemetryBatchHeartbeatRequest(CloudTelemetryProtocolModel):
     install_credential: str = Field(min_length=1)
     windows: list[CloudTelemetryHeartbeatWindowPayload] = Field(min_length=1)
     sent_at: float | None = None
+    app_version: str | None = None
 
     @model_validator(mode="after")
     def validate_unique_window_sequences(self) -> "CloudTelemetryBatchHeartbeatRequest":
