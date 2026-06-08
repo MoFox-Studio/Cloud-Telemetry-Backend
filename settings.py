@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from pathlib import Path
 from typing import Mapping
@@ -51,6 +51,22 @@ def _default_geoip_database_path() -> str:
     return ""
 
 
+def _parse_geoip_database_path(raw_value: str | None, *, default: str) -> str:
+    """解析 GeoIP 数据库路径，空值回退到随包默认库。"""
+
+    if raw_value is None:
+        return default
+
+    normalized = raw_value.strip()
+    if not normalized:
+        return default
+
+    if normalized.lower() in {"0", "false", "off", "none", "disable", "disabled"}:
+        return ""
+
+    return normalized
+
+
 @dataclass(slots=True)
 class CloudTelemetryBackendSettings:
     """云端遥测独立后端配置。"""
@@ -74,7 +90,7 @@ class CloudTelemetryBackendSettings:
     gap_recovery_window: int = 50
     instance_detail_max_windows: int = 50
     instance_detail_max_diagnostic_events: int = 50
-    geoip_database_path: str = _default_geoip_database_path()
+    geoip_database_path: str = field(default_factory=_default_geoip_database_path)
     database_type: str = "sqlite"
     sqlite_path: str = "data/cloud_telemetry/cloud_telemetry.db"
     postgresql_host: str = "localhost"
@@ -183,9 +199,9 @@ class CloudTelemetryBackendSettings:
                 env.get("CLOUD_TELEMETRY_INSTANCE_DETAIL_MAX_DIAGNOSTIC_EVENTS"),
                 default=defaults.instance_detail_max_diagnostic_events,
             ),
-            geoip_database_path=env.get(
-                "CLOUD_TELEMETRY_GEOIP_DATABASE_PATH",
-                defaults.geoip_database_path,
+            geoip_database_path=_parse_geoip_database_path(
+                env.get("CLOUD_TELEMETRY_GEOIP_DATABASE_PATH"),
+                default=defaults.geoip_database_path,
             ),
             database_type=env.get("CLOUD_TELEMETRY_DATABASE_TYPE", defaults.database_type),
             sqlite_path=env.get("CLOUD_TELEMETRY_SQLITE_PATH", defaults.sqlite_path),

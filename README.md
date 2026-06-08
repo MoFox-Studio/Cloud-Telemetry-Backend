@@ -65,7 +65,7 @@ docker compose up -d --build
 | `CLOUD_TELEMETRY_ADMIN_API_KEYS` | 后台 X-API-Key 列表（逗号分隔） |
 | `CLOUD_TELEMETRY_BOOTSTRAP_CREDENTIALS` | 注册引导凭证白名单（官方分发预置） |
 | `CLOUD_TELEMETRY_DATABASE_TYPE` | `sqlite` 或 `postgresql` |
-| `CLOUD_TELEMETRY_GEOIP_DATABASE_PATH` | MaxMind GeoLite2-City.mmdb 路径，留空表示不启用地域派生 |
+| `CLOUD_TELEMETRY_GEOIP_DATABASE_PATH` | MaxMind GeoLite2-City.mmdb 路径；留空时优先使用随包数据库，设为 `disabled` 可显式关闭地域派生 |
 | `CLOUD_TELEMETRY_OFFLINE_GRACE_FACTOR` | 在线状态判定的宽限系数 |
 | `CLOUD_TELEMETRY_OFFLINE_SCAN_INTERVAL_SECONDS` | 后台离线扫描周期 |
 | `CLOUD_TELEMETRY_GAP_RECOVERY_WINDOW` | 心跳缺口允许补齐的窗口数（超出视为永久丢失） |

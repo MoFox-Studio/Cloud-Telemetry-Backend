@@ -147,3 +147,22 @@ def test_settings_default_geoip_path_uses_repo_root_database_when_present() -> N
         assert settings.geoip_database_path.endswith("GeoLite2-City.mmdb")
     else:
         assert settings.geoip_database_path == ""
+
+
+def test_settings_blank_geoip_env_falls_back_to_default_database() -> None:
+    """空的 GeoIP 路径配置应回退到随包默认库。"""
+
+    expected = CloudTelemetryBackendSettings.from_env({}).geoip_database_path
+    settings = CloudTelemetryBackendSettings.from_env(
+        {"CLOUD_TELEMETRY_GEOIP_DATABASE_PATH": ""}
+    )
+    assert settings.geoip_database_path == expected
+
+
+def test_settings_geoip_disabled_keyword_turns_off_resolution() -> None:
+    """显式 disabled 应关闭 GeoIP 解析。"""
+
+    settings = CloudTelemetryBackendSettings.from_env(
+        {"CLOUD_TELEMETRY_GEOIP_DATABASE_PATH": "disabled"}
+    )
+    assert settings.geoip_database_path == ""
