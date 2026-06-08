@@ -45,7 +45,7 @@ def _parse_csv(raw_value: str | None) -> tuple[str, ...]:
 def _default_geoip_database_path() -> str:
     """Return the repo-root GeoLite2 database path when it exists."""
 
-    candidate = Path(__file__).resolve().parent.parent / "GeoLite2-City.mmdb"
+    candidate = Path(__file__).resolve().parent / "GeoLite2-City.mmdb"
     if candidate.exists():
         return str(candidate)
     return ""
