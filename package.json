@@ -1,0 +1,24 @@
+{
+  "name": "cloud_telemetry_backend",
+  "version": "1.0.0",
+  "description": "独立云端遥测接入与后台只读管理服务。",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MoFox-Studio/Cloud-Telemetry-Backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MoFox-Studio/Cloud-Telemetry-Backend/issues"
+  },
+  "homepage": "https://github.com/MoFox-Studio/Cloud-Telemetry-Backend#readme"
+}

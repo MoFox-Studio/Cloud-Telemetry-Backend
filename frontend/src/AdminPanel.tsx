@@ -13,6 +13,7 @@ const renderDoughnutPanel = (
   items: Array<{ label: string; count: number }>
 ) => {
   const total = items.reduce((a, b) => a + b.count, 0);
+  const sortedItems = [...items].sort((a, b) => b.count - a.count);
   return (
     <div className="panel">
       <div className="panel-header">
@@ -25,7 +26,7 @@ const renderDoughnutPanel = (
           <canvas ref={canvasRef}></canvas>
         </div>
         <div className="custom-legend">
-          {items.slice(0, 4).map((item, idx) => (
+          {sortedItems.slice(0, 4).map((item, idx) => (
             <div className="legend-item" key={idx}>
               <div className="legend-label">
                 <span className="legend-color" style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}></span>
@@ -722,13 +723,13 @@ export default function AdminPanel({ apiPrefix }: AdminPanelProps) {
               <section className="panel-grid-2">
                 <div className="panel">
                   <div className="panel-header">
-                    <div className="panel-header-title"><h3>遥测看门狗健康状态</h3></div>
+                    <div className="panel-header-title"><h3>看门狗健康状态</h3></div>
                   </div>
                   <div className="panel-body">
                     <div className="watchdog-strip">
                       <div className="watchdog-card">
                         <span className="watchdog-val">{perf.watchdog_samples ? `${Number(perf.watchdog_running_samples || 0)}/${perf.watchdog_samples}` : '-'}</span>
-                        <span className="watchdog-lbl">看门狗监测成功率</span>
+                        <span className="watchdog-lbl">看门狗监测成功计数</span>
                       </div>
                       <div className="watchdog-card">
                         <span className="watchdog-val">{perf.watchdog_samples ? `${Number(perf.watchdog_thread_alive_samples || 0)}/${perf.watchdog_samples}` : '-'}</span>

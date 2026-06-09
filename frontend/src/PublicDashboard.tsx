@@ -5,10 +5,15 @@ import { fetchJson, fmtNum, fmtPct, fmtTime, fmtHour, fmtDate } from './utils';
 // @ts-ignore
 import ReactGlobe from 'react-globe.gl';
 import * as THREE from 'three';
+import BorderGlow from './components/BorderGlow';
 
 Chart.register(...registerables);
 
 const CHART_COLORS = ['#5b9bd5', '#4caf93', '#d4a844', '#e0556a', '#9b7ec4', '#56b6c2', '#e08e4a', '#949aa5'];
+const PANEL_GLOW_COLORS = ['#818cf8', '#f472b6', '#38bdf8'];
+const HERO_GLOW_COLORS = ['#34d399', '#60a5fa', '#c084fc'];
+const KPI_GLOW_COLORS = ['#8b5cf6', '#f472b6', '#38bdf8'];
+const DANGER_GLOW_COLORS = ['#fb7185', '#f59e0b', '#ef4444'];
 
 const COUNTRY_COORDS: Record<string, { name: string; lat: number; lon: number }> = {
   CN: { name: '中国', lat: 35.8617, lon: 104.1954 },
@@ -501,6 +506,40 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const renderGlowPanel = (
+    children: React.ReactNode,
+    options: {
+      as?: 'div' | 'section';
+      className?: string;
+      style?: React.CSSProperties;
+      glowColor?: string;
+      colors?: string[];
+      backgroundColor?: string;
+    } = {},
+  ) => {
+    const Tag = options.as ?? 'div';
+
+    return (
+      <BorderGlow
+        className={`telemetry-glow-card telemetry-glow-card--panel${options.className ? ` ${options.className}` : ''}`}
+        style={options.style}
+        edgeSensitivity={26}
+        glowColor={options.glowColor ?? '244 95 72'}
+        backgroundColor={options.backgroundColor ?? 'rgba(10, 11, 18, 0.82)'}
+        borderRadius={16}
+        glowRadius={24}
+        glowIntensity={0.9}
+        coneSpread={14}
+        fillOpacity={0.025}
+        colors={options.colors ?? PANEL_GLOW_COLORS}
+      >
+        <Tag className="panel glow-surface">
+          {children}
+        </Tag>
+      </BorderGlow>
+    );
+  };
+
   if (loading) {
     return (
       <div className="loading-screen">
@@ -525,14 +564,19 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
             <a href="/_cloud_telemetry/admin">管理面板</a>
           </div>
         </header>
-        <div className="panel" style={{ border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
+        {renderGlowPanel(
           <div className="panel-body" style={{ textAlign: 'center', padding: '48px' }}>
             <AlertOctagon size={48} className="text-danger" style={{ color: 'red', margin: '0 auto 16px' }} />
             <h2 style={{ marginBottom: '8px' }}>服务暂时不可用</h2>
             <p style={{ color: 'var(--text-secondary)' }}>{error}</p>
             <button className="btn primary" onClick={() => loadData()} style={{ marginTop: '20px' }}>重新尝试</button>
-          </div>
-        </div>
+          </div>,
+          {
+            glowColor: '350 85 62',
+            colors: DANGER_GLOW_COLORS,
+            backgroundColor: 'rgba(30, 11, 18, 0.82)',
+          },
+        )}
       </div>
     );
   }
@@ -556,7 +600,6 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
           const l = 20 + ratio * 30;
           const color = ratio === 0 ? 'rgba(255, 255, 255, 0.02)' : `hsl(${h}, ${s}%, ${l}%)`;
           const borderStyle = ratio > 0.5 ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255,255,255,0.02)';
-          
           return (
             <span
               key={idx}
@@ -570,11 +613,13 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
     );
   };
 
+
   // Doughnut panel helper
   const renderDoughnutPanel = (title: string, canvasRef: React.RefObject<HTMLCanvasElement | null>, items: Array<{label: string, count: number}>) => {
     const total = items.reduce((a, b) => a + b.count, 0);
-    return (
-      <div className="panel">
+    const sortedItems = [...items].sort((a, b) => b.count - a.count);
+    return renderGlowPanel(
+      <>
         <div className="panel-header">
           <div className="panel-header-title">
             <h3>{title}</h3>
@@ -585,7 +630,7 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
             <canvas ref={canvasRef}></canvas>
           </div>
           <div className="custom-legend">
-            {items.slice(0, 4).map((item, idx) => (
+            {sortedItems.slice(0, 4).map((item, idx) => (
               <div className="legend-item" key={idx}>
                 <div className="legend-label">
                   <span className="legend-color" style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}></span>
@@ -596,7 +641,10 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
             ))}
           </div>
         </div>
-      </div>
+      </>,
+      {
+        colors: ['#818cf8', '#34d399', '#38bdf8'],
+      },
     );
   };
 
@@ -632,22 +680,48 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
           </p>
           
           <div className="hero-stats-grid">
-            <div className="hero-stat-card active-nodes">
-              <div className="stat-label">
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span className="dot"></span>
-                  当前在线活动节点
-                </span>
+            <BorderGlow
+              className="telemetry-glow-card telemetry-glow-card--hero"
+              edgeSensitivity={24}
+              glowColor="156 85 55"
+              backgroundColor="rgba(11, 16, 20, 0.72)"
+              borderRadius={24}
+              glowRadius={26}
+              glowIntensity={0.95}
+              coneSpread={14}
+              fillOpacity={0.025}
+              colors={HERO_GLOW_COLORS}
+            >
+              <div className="hero-stat-card active-nodes glow-surface">
+                <div className="stat-label">
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="dot"></span>
+                    当前在线活动节点
+                  </span>
+                </div>
+                <div className="stat-value">{fmtNum(ov.online_instances)}</div>
+                <div className="stat-sub">持续心跳接收中</div>
               </div>
-              <div className="stat-value">{fmtNum(ov.online_instances)}</div>
-              <div className="stat-sub">持续心跳接收中</div>
-            </div>
+            </BorderGlow>
             
-            <div className="hero-stat-card">
-              <div className="stat-label">累计注册节点数</div>
-              <div className="stat-value">{fmtNum(ov.total_instances)}</div>
-              <div className="stat-sub">节点离线断连已过滤</div>
-            </div>
+            <BorderGlow
+              className="telemetry-glow-card telemetry-glow-card--hero"
+              edgeSensitivity={24}
+              glowColor="244 95 72"
+              backgroundColor="rgba(13, 12, 22, 0.72)"
+              borderRadius={24}
+              glowRadius={26}
+              glowIntensity={0.95}
+              coneSpread={14}
+              fillOpacity={0.025}
+              colors={['#a78bfa', '#f472b6', '#60a5fa']}
+            >
+              <div className="hero-stat-card glow-surface">
+                <div className="stat-label">累计注册节点数</div>
+                <div className="stat-value">{fmtNum(ov.total_instances)}</div>
+                <div className="stat-sub">所有注册的实例数量</div>
+              </div>
+            </BorderGlow>
           </div>
         </div>
 
@@ -676,49 +750,102 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
         </div>
 
         <div className="kpi-row">
-          <div className="kpi-card">
-            <div className="kpi-label">
-              <span>24h 心跳窗口</span>
-              <BarChart2 size={14} style={{ color: 'hsl(var(--primary-hsl))' }} />
+          <BorderGlow
+            className="telemetry-glow-card telemetry-glow-card--metric"
+            edgeSensitivity={24}
+            glowColor="244 95 72"
+            backgroundColor="rgba(12, 13, 20, 0.72)"
+            borderRadius={16}
+            glowRadius={22}
+            glowIntensity={0.88}
+            coneSpread={12}
+            fillOpacity={0.02}
+            colors={KPI_GLOW_COLORS}
+          >
+            <div className="kpi-card glow-surface">
+              <div className="kpi-label">
+                <span>24h 心跳窗口</span>
+                <BarChart2 size={14} style={{ color: 'hsl(var(--primary-hsl))' }} />
+              </div>
+              <div className="kpi-value">{fmtNum(perf.window_count)}</div>
+              <div className="kpi-sub">聚合自 {fmtNum(timeline.length)} 个时段</div>
             </div>
-            <div className="kpi-value">{fmtNum(perf.window_count)}</div>
-            <div className="kpi-sub">聚合自 {fmtNum(timeline.length)} 个时段</div>
-          </div>
+          </BorderGlow>
 
-          <div className="kpi-card">
-            <div className="kpi-label">
-              <span>24h Token 吞吐</span>
-              <Cpu size={14} style={{ color: 'hsl(var(--accent-hsl))' }} />
+          <BorderGlow
+            className="telemetry-glow-card telemetry-glow-card--metric"
+            edgeSensitivity={24}
+            glowColor="317 95 68"
+            backgroundColor="rgba(16, 11, 20, 0.72)"
+            borderRadius={16}
+            glowRadius={22}
+            glowIntensity={0.88}
+            coneSpread={12}
+            fillOpacity={0.02}
+            colors={['#f472b6', '#fb7185', '#a78bfa']}
+          >
+            <div className="kpi-card glow-surface">
+              <div className="kpi-label">
+                <span>24h Token 吞吐</span>
+                <Cpu size={14} style={{ color: 'hsl(var(--accent-hsl))' }} />
+              </div>
+              <div className="kpi-value">{fmtNum(perf.total_tokens)}</div>
+              <div className="kpi-sub">发生 {fmtNum(perf.request_count)} 次模型调用</div>
             </div>
-            <div className="kpi-value">{fmtNum(perf.total_tokens)}</div>
-            <div className="kpi-sub">发生 {fmtNum(perf.request_count)} 次模型调用</div>
-          </div>
+          </BorderGlow>
 
-          <div className="kpi-card">
-            <div className="kpi-label">
-              <span>模型响应成功率</span>
-              <CheckCircle2 size={14} style={{ color: 'hsl(var(--success-hsl))' }} />
+          <BorderGlow
+            className="telemetry-glow-card telemetry-glow-card--metric"
+            edgeSensitivity={24}
+            glowColor="156 85 55"
+            backgroundColor="rgba(10, 16, 16, 0.72)"
+            borderRadius={16}
+            glowRadius={22}
+            glowIntensity={0.88}
+            coneSpread={12}
+            fillOpacity={0.02}
+            colors={['#34d399', '#60a5fa', '#a78bfa']}
+          >
+            <div className="kpi-card glow-surface">
+              <div className="kpi-label">
+                <span>模型响应成功率</span>
+                <CheckCircle2 size={14} style={{ color: 'hsl(var(--success-hsl))' }} />
+              </div>
+              <div className="kpi-value">{fmtPct(perf.success_rate)}</div>
+              <div className="kpi-sub">响应平均延时: {Number(perf.average_latency || 0).toFixed(2)}s</div>
             </div>
-            <div className="kpi-value">{fmtPct(perf.success_rate)}</div>
-            <div className="kpi-sub">响应平均延时: {Number(perf.average_latency || 0).toFixed(2)}s</div>
-          </div>
+          </BorderGlow>
 
-          <div className="kpi-card">
-            <div className="kpi-label">
-              <span>本地缓存命中率</span>
-              <Database size={14} style={{ color: 'hsl(var(--info-hsl))' }} />
+          <BorderGlow
+            className="telemetry-glow-card telemetry-glow-card--metric"
+            edgeSensitivity={24}
+            glowColor="212 95 65"
+            backgroundColor="rgba(10, 14, 22, 0.72)"
+            borderRadius={16}
+            glowRadius={22}
+            glowIntensity={0.88}
+            coneSpread={12}
+            fillOpacity={0.02}
+            colors={['#38bdf8', '#818cf8', '#34d399']}
+          >
+            <div className="kpi-card glow-surface">
+              <div className="kpi-label">
+                <span>综合缓存命中率</span>
+                <Database size={14} style={{ color: 'hsl(var(--info-hsl))' }} />
+              </div>
+              <div className="kpi-value">{fmtPct(perf.cache_hit_rate)}</div>
+              <div className="kpi-sub">所有请求的综合缓存命中率</div>
             </div>
-            <div className="kpi-value">{fmtPct(perf.cache_hit_rate)}</div>
-            <div className="kpi-sub">本地缓存激活模块占比</div>
-          </div>
+          </BorderGlow>
         </div>
 
         <div className="panel-grid-2">
-          <div className="panel">
+          {renderGlowPanel(
+            <>
             <div className="panel-header">
               <div className="panel-header-title">
                 <h3>24h 遥测心跳时间线</h3>
-                <p>最近 24 小时每个时段的心跳包数量与拦截错误计数趋势</p>
+                <p>最近 24 小时每个时段的心跳包数量与错误计数趋势</p>
               </div>
             </div>
             <div className="panel-body">
@@ -726,13 +853,15 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
                 <canvas ref={chartTimelineRef}></canvas>
               </div>
             </div>
-          </div>
+            </>,
+          )}
 
-          <div className="panel">
+          {renderGlowPanel(
+            <>
             <div className="panel-header">
               <div className="panel-header-title">
                 <h3>遥测看门狗健康状态</h3>
-                <p>看门狗轮询成功与连接流失败率统计</p>
+                <p>看门狗轮询成功与聊天流超时统计</p>
               </div>
             </div>
             <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -753,11 +882,15 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
                   <span className="watchdog-val" style={{ color: Number(perf.stream_failures_max || 0) > 0 ? 'hsl(var(--warning-hsl))' : 'inherit' }}>
                     {fmtNum(perf.stream_failures_max)}
                   </span>
-                  <span className="watchdog-lbl">活跃流最高失败拦截</span>
+                  <span className="watchdog-lbl">活跃流最高失败计数</span>
                 </div>
               </div>
             </div>
-          </div>
+            </>,
+            {
+              colors: ['#34d399', '#60a5fa', '#818cf8'],
+            },
+          )}
         </div>
       </section>
 
@@ -772,7 +905,8 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
         </div>
 
         <section className="panel-grid-2" style={{ marginBottom: '20px' }}>
-          <div className="panel">
+          {renderGlowPanel(
+            <>
             <div className="panel-header">
               <div className="panel-header-title">
                 <h3>心跳错误热度网格</h3>
@@ -789,9 +923,14 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
                 </div>
               </div>
             </div>
-          </div>
+            </>,
+            {
+              colors: ['#818cf8', '#f59e0b', '#f472b6'],
+            },
+          )}
 
-          <div className="panel">
+          {renderGlowPanel(
+            <>
             <div className="panel-header">
               <div className="panel-header-title">
                 <h3>24h 数据流量与活跃变化</h3>
@@ -803,7 +942,11 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
                 <canvas ref={chartPerformanceRef}></canvas>
               </div>
             </div>
-          </div>
+            </>,
+            {
+              colors: ['#38bdf8', '#34d399', '#818cf8'],
+            },
+          )}
         </section>
 
         <section className="panel-grid-4">
@@ -829,19 +972,25 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
           )}
         </section>
 
-        <div className="panel" style={{ marginTop: '24px' }}>
-          <div className="panel-header">
-            <div className="panel-header-title">
-              <h3>新激活实例版本演化 (14天)</h3>
-              <p>每日新激活节点采纳不同应用版本的趋势变化图</p>
+        {renderGlowPanel(
+          <>
+            <div className="panel-header">
+              <div className="panel-header-title">
+                <h3>新激活实例版本演化 (14天)</h3>
+                <p>每日新激活节点采纳不同应用版本的趋势变化图</p>
+              </div>
             </div>
-          </div>
-          <div className="panel-body">
-            <div className="chart-container h-md">
-              <canvas ref={chartTrendRef}></canvas>
+            <div className="panel-body">
+              <div className="chart-container h-md">
+                <canvas ref={chartTrendRef}></canvas>
+              </div>
             </div>
-          </div>
-        </div>
+          </>,
+          {
+            style: { marginTop: '24px' },
+            colors: ['#818cf8', '#f472b6', '#34d399'],
+          },
+        )}
       </section>
 
       {/* SECTION 4: APPLICATION METRICS (业务深度性能分析) */}
@@ -854,100 +1003,113 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
           <p>统计不同事件域（db、runtime、llm等）以及单接口 Token 排行</p>
         </div>
 
-        <section className="panel" style={{ marginBottom: '24px' }}>
-          <div className="panel-header">
-            <div className="panel-header-title">
-              <h3>节点遥测事件发生域</h3>
-              <p>本地检测到的诊断警告和报错分类</p>
+        {renderGlowPanel(
+          <>
+            <div className="panel-header">
+              <div className="panel-header-title">
+                <h3>节点遥测事件发生域</h3>
+                <p>本地检测到的诊断警告和报错分类</p>
+              </div>
             </div>
-          </div>
-          <div className="panel-body">
-            <div className="domain-grid">
-              {(perf.health_domains || []).map((d: any, idx: number) => {
-                const hasErrors = Number(d.error_events) > 0;
-                const hasWarnings = Number(d.warning_events) > 0;
-                let borderCol = 'var(--border)';
-                let icon = <CheckCircle2 size={16} style={{ color: 'hsl(var(--success-hsl))' }} />;
-                if (hasErrors) {
-                  borderCol = 'rgba(239, 68, 68, 0.2)';
-                  icon = <AlertOctagon size={16} style={{ color: 'hsl(var(--danger-hsl))' }} />;
-                } else if (hasWarnings) {
-                  borderCol = 'rgba(245, 158, 11, 0.2)';
-                  icon = <AlertTriangle size={16} style={{ color: 'hsl(var(--warning-hsl))' }} />;
-                }
-                
-                return (
-                  <div className="domain-card" key={idx} style={{ borderColor: borderCol }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span className="domain-name">{d.domain}</span>
-                      {icon}
+            <div className="panel-body">
+              <div className="domain-grid">
+                {(perf.health_domains || []).map((d: any, idx: number) => {
+                  const hasErrors = Number(d.error_events) > 0;
+                  const hasWarnings = Number(d.warning_events) > 0;
+                  let borderCol = 'var(--border)';
+                  let icon = <CheckCircle2 size={16} style={{ color: 'hsl(var(--success-hsl))' }} />;
+                  if (hasErrors) {
+                    borderCol = 'rgba(239, 68, 68, 0.2)';
+                    icon = <AlertOctagon size={16} style={{ color: 'hsl(var(--danger-hsl))' }} />;
+                  } else if (hasWarnings) {
+                    borderCol = 'rgba(245, 158, 11, 0.2)';
+                    icon = <AlertTriangle size={16} style={{ color: 'hsl(var(--warning-hsl))' }} />;
+                  }
+                  
+                  return (
+                    <div className="domain-card" key={idx} style={{ borderColor: borderCol }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span className="domain-name">{d.domain}</span>
+                        {icon}
+                      </div>
+                      <span className="domain-time">最后上报: {fmtTime(d.last_event_at)}</span>
+                      <div className="domain-stats">
+                        <span className="chip info">{fmtNum(d.total_events)} 次事件</span>
+                        {Number(d.warning_events) > 0 && <span className="chip warn">{d.warning_events} 警告</span>}
+                        {Number(d.error_events) > 0 && <span className="chip bad">{d.error_events} 错误</span>}
+                      </div>
                     </div>
-                    <span className="domain-time">最后上报: {fmtTime(d.last_event_at)}</span>
-                    <div className="domain-stats">
-                      <span className="chip info">{fmtNum(d.total_events)} 次事件</span>
-                      {Number(d.warning_events) > 0 && <span className="chip warn">{d.warning_events} 警告</span>}
-                      {Number(d.error_events) > 0 && <span className="chip bad">{d.error_events} 错误</span>}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </section>
+          </>,
+          {
+            as: 'section',
+            style: { marginBottom: '24px' },
+            colors: ['#34d399', '#818cf8', '#f59e0b'],
+          },
+        )}
 
-        <section className="panel">
-          <div className="panel-header">
-            <div className="panel-header-title">
-              <h3>大语言模型 (LLM) 调用排行榜 (24h)</h3>
-              <p>统计前 10 种最活跃的大模型接口（排斥非公用匿名信息）</p>
+        {renderGlowPanel(
+          <>
+            <div className="panel-header">
+              <div className="panel-header-title">
+                <h3>大语言模型 (LLM) 调用排行榜 (24h)</h3>
+                <p>统计前 10 种最活跃的大模型请求（脱敏处理）</p>
+              </div>
             </div>
-          </div>
-          <div className="panel-body no-padding">
-            <div className="table-wrapper">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>调用接口名</th>
-                    <th>请求计数</th>
-                    <th>总消耗 Token</th>
-                    <th>平均延时</th>
-                    <th>缓存命中率</th>
-                    <th>接口调用成功率</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(perf.top_requests || []).map((r: any, idx: number) => (
-                    <tr key={idx}>
-                      <td className="mono" style={{ fontWeight: 600, color: 'var(--text)' }}>{r.request_name}</td>
-                      <td>{fmtNum(r.request_count)}</td>
-                      <td>
-                        <div className="cell-bar-container">
-                          <span style={{ minWidth: '60px' }}>{fmtNum(r.total_tokens)}</span>
-                          <div className="cell-bar">
-                            <div
-                              className="cell-bar-fill"
-                              style={{
-                                width: `${Math.min(100, (r.total_tokens / (perf.total_tokens || 1)) * 100)}%`,
-                                background: 'linear-gradient(90deg, hsl(var(--primary-hsl)), hsl(var(--accent-hsl)))'
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td>{Number(r.average_latency || 0).toFixed(2)}s</td>
-                      <td>{fmtPct(r.cache_hit_rate)}</td>
-                      <td>
-                        <span className={`chip ${r.success_rate >= 0.95 ? 'good' : r.success_rate >= 0.85 ? 'warn' : 'bad'}`}>
-                          {fmtPct(r.success_rate)}
-                        </span>
-                      </td>
+            <div className="panel-body no-padding">
+              <div className="table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>调用请求名</th>
+                      <th>请求计数</th>
+                      <th>总消耗 Token</th>
+                      <th>平均延时</th>
+                      <th>缓存命中率</th>
+                      <th>请求成功率</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(perf.top_requests || []).map((r: any, idx: number) => (
+                      <tr key={idx}>
+                        <td className="mono" style={{ fontWeight: 600, color: 'var(--text)' }}>{r.request_name}</td>
+                        <td>{fmtNum(r.request_count)}</td>
+                        <td>
+                          <div className="cell-bar-container">
+                            <span style={{ minWidth: '60px' }}>{fmtNum(r.total_tokens)}</span>
+                            <div className="cell-bar">
+                              <div
+                                className="cell-bar-fill"
+                                style={{
+                                  width: `${Math.min(100, (r.total_tokens / (perf.total_tokens || 1)) * 100)}%`,
+                                  background: 'linear-gradient(90deg, hsl(var(--primary-hsl)), hsl(var(--accent-hsl)))'
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td>{Number(r.average_latency || 0).toFixed(2)}s</td>
+                        <td>{fmtPct(r.cache_hit_rate)}</td>
+                        <td>
+                          <span className={`chip ${r.success_rate >= 0.95 ? 'good' : r.success_rate >= 0.85 ? 'warn' : 'bad'}`}>
+                            {fmtPct(r.success_rate)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        </section>
+          </>,
+          {
+            as: 'section',
+            colors: ['#818cf8', '#f472b6', '#38bdf8'],
+          },
+        )}
       </section>
     </div>
   );
