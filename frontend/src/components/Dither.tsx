@@ -188,8 +188,12 @@ function DitheredWaves({
   driftStrength
 }) {
   const mesh = useRef(null);
-  const mouseRef = useRef(new THREE.Vector2(0.5, 0.5));
+  const pointerTargetRef = useRef(new THREE.Vector2(0.5, 0.5));
+  const displayMouseRef = useRef(new THREE.Vector2(0.5, 0.5));
+  const idleAnchorRef = useRef(new THREE.Vector2(0.5, 0.5));
+  const idleTargetRef = useRef(new THREE.Vector2(0.5, 0.5));
   const lastPointerAtRef = useRef(0);
+  const isIdleRef = useRef(false);
   const { viewport, size, gl } = useThree();
 
   const waveUniformsRef = useRef({
@@ -216,7 +220,10 @@ function DitheredWaves({
     }
     const centerX = w * 0.5;
     const centerY = h * 0.5;
-    mouseRef.current.set(centerX, centerY);
+    pointerTargetRef.current.set(centerX, centerY);
+    displayMouseRef.current.set(centerX, centerY);
+    idleAnchorRef.current.set(centerX, centerY);
+    idleTargetRef.current.set(centerX, centerY);
     waveUniformsRef.current.mousePos.value.set(centerX, centerY);
   }, [size, gl]);
 
@@ -245,16 +252,33 @@ function DitheredWaves({
 
     if (enableMouseInteraction) {
       const now = performance.now();
-      if (now - lastPointerAtRef.current > 160) {
-        const dpr = gl.getPixelRatio();
-        const w = Math.max(1, Math.floor(size.width * dpr));
-        const h = Math.max(1, Math.floor(size.height * dpr));
-        const idleX = w * (0.5 + Math.sin(elapsed * 0.11) * 0.12);
-        const idleY = h * (0.48 + Math.cos(elapsed * 0.09) * 0.09);
-        mouseRef.current.lerp(new THREE.Vector2(idleX, idleY), 0.04);
+      const idleDelayMs = 1400;
+      const shouldIdle = now - lastPointerAtRef.current > idleDelayMs;
+      const dpr = gl.getPixelRatio();
+      const w = Math.max(1, Math.floor(size.width * dpr));
+      const h = Math.max(1, Math.floor(size.height * dpr));
+
+      if (shouldIdle) {
+        if (!isIdleRef.current) {
+          idleAnchorRef.current.copy(displayMouseRef.current);
+          isIdleRef.current = true;
+        }
+
+        const idleRadiusX = w * 0.045;
+        const idleRadiusY = h * 0.035;
+        idleTargetRef.current.set(
+          idleAnchorRef.current.x + Math.sin(elapsed * 0.11) * idleRadiusX,
+          idleAnchorRef.current.y + Math.cos(elapsed * 0.09 + 0.7) * idleRadiusY
+        );
+        idleTargetRef.current.x = Math.max(0, Math.min(w, idleTargetRef.current.x));
+        idleTargetRef.current.y = Math.max(0, Math.min(h, idleTargetRef.current.y));
+        displayMouseRef.current.lerp(idleTargetRef.current, 0.018);
+      } else {
+        isIdleRef.current = false;
+        displayMouseRef.current.lerp(pointerTargetRef.current, 0.12);
       }
 
-      u.mousePos.value.copy(mouseRef.current);
+      u.mousePos.value.copy(displayMouseRef.current);
     }
   });
 
@@ -262,7 +286,10 @@ function DitheredWaves({
     if (!enableMouseInteraction) return;
     const handleGlobalPointerMove = (e) => {
       const dpr = gl.getPixelRatio();
-      mouseRef.current.set(e.clientX * dpr, e.clientY * dpr);
+      pointerTargetRef.current.set(e.clientX * dpr, e.clientY * dpr);
+      if (isIdleRef.current) {
+        idleAnchorRef.current.copy(displayMouseRef.current);
+      }
       lastPointerAtRef.current = performance.now();
     };
     window.addEventListener('pointermove', handleGlobalPointerMove);
