@@ -17,7 +17,9 @@ const HERO_GLOW_COLORS = ['#34d399', '#60a5fa', '#c084fc'];
 const KPI_GLOW_COLORS = ['#8b5cf6', '#f472b6', '#38bdf8'];
 const DANGER_GLOW_COLORS = ['#fb7185', '#f59e0b', '#ef4444'];
 
-const COUNTRY_COORDS: Record<string, { name: string; lat: number; lon: number }> = {
+type GeoCoords = { name: string; lat: number; lon: number };
+
+const COUNTRY_COORDS: Record<string, GeoCoords> = {
   CN: { name: '中国', lat: 35.8617, lon: 104.1954 },
   US: { name: '美国', lat: 37.0902, lon: -95.7129 },
   DE: { name: '德国', lat: 51.1657, lon: 10.4515 },
@@ -34,8 +36,109 @@ const COUNTRY_COORDS: Record<string, { name: string; lat: number; lon: number }>
   ZA: { name: '南非', lat: -30.5595, lon: 22.9375 },
   NL: { name: '荷兰', lat: 52.1326, lon: 5.2913 },
   HK: { name: '中国香港', lat: 22.3964, lon: 114.1095 },
-  TW: { name: '中国台湾', lat: 23.6978, lon: 120.9605 }
+  TW: { name: '中国台湾', lat: 23.6978, lon: 120.9605 },
+  MO: { name: '中国澳门', lat: 22.1987, lon: 113.5439 }
 };
+
+const REGION_COORDS: Record<string, GeoCoords> = {
+  'CN-BJ': { name: '北京', lat: 39.9042, lon: 116.4074 },
+  'CN-TJ': { name: '天津', lat: 39.3434, lon: 117.3616 },
+  'CN-HE': { name: '河北', lat: 38.0428, lon: 114.5149 },
+  'CN-SX': { name: '山西', lat: 37.8706, lon: 112.5489 },
+  'CN-NM': { name: '内蒙古', lat: 43.6530, lon: 111.6708 },
+  'CN-LN': { name: '辽宁', lat: 41.8057, lon: 123.4315 },
+  'CN-JL': { name: '吉林', lat: 43.8171, lon: 125.3235 },
+  'CN-HL': { name: '黑龙江', lat: 45.8038, lon: 126.5349 },
+  'CN-SH': { name: '上海', lat: 31.2304, lon: 121.4737 },
+  'CN-JS': { name: '江苏', lat: 32.0603, lon: 118.7969 },
+  'CN-ZJ': { name: '浙江', lat: 30.2741, lon: 120.1551 },
+  'CN-AH': { name: '安徽', lat: 31.8206, lon: 117.2272 },
+  'CN-FJ': { name: '福建', lat: 26.0745, lon: 119.2965 },
+  'CN-JX': { name: '江西', lat: 28.6820, lon: 115.8579 },
+  'CN-SD': { name: '山东', lat: 36.6512, lon: 117.1201 },
+  'CN-HA': { name: '河南', lat: 34.7657, lon: 113.7532 },
+  'CN-HB': { name: '湖北', lat: 30.5928, lon: 114.3055 },
+  'CN-HN': { name: '湖南', lat: 28.2282, lon: 112.9388 },
+  'CN-GD': { name: '广东', lat: 23.1291, lon: 113.2644 },
+  'CN-GX': { name: '广西', lat: 22.8170, lon: 108.3669 },
+  'CN-HI': { name: '海南', lat: 20.0440, lon: 110.1983 },
+  'CN-CQ': { name: '重庆', lat: 29.5630, lon: 106.5516 },
+  'CN-SC': { name: '四川', lat: 30.5728, lon: 104.0668 },
+  'CN-GZ': { name: '贵州', lat: 26.6470, lon: 106.6302 },
+  'CN-YN': { name: '云南', lat: 25.0389, lon: 102.7183 },
+  'CN-XZ': { name: '西藏', lat: 29.6520, lon: 91.1721 },
+  'CN-SN': { name: '陕西', lat: 34.3416, lon: 108.9398 },
+  'CN-GS': { name: '甘肃', lat: 36.0611, lon: 103.8343 },
+  'CN-QH': { name: '青海', lat: 36.6171, lon: 101.7782 },
+  'CN-NX': { name: '宁夏', lat: 38.4872, lon: 106.2309 },
+  'CN-XJ': { name: '新疆', lat: 43.8256, lon: 87.6168 }
+};
+
+const DEFAULT_GEO_COORDS: GeoCoords = { name: '未知区域', lat: 35, lon: 105 };
+
+function normalizeGeoCode(value?: string | null): string | null {
+  if (!value) return null;
+  const normalized = value.trim().toUpperCase();
+  return normalized && normalized !== 'UNKNOWN' ? normalized : null;
+}
+
+function splitGeoKey(key: string): { countryCode: string | null; regionCode: string | null } {
+  const trimmed = String(key || '').trim();
+  if (!trimmed || trimmed.toLowerCase() === 'unknown') {
+    return { countryCode: null, regionCode: null };
+  }
+
+  const [countryPart, ...rest] = trimmed.split('-');
+  return {
+    countryCode: normalizeGeoCode(countryPart),
+    regionCode: normalizeGeoCode(rest.join('-') || null)
+  };
+}
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash * 31) + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function wrapLongitude(value: number): number {
+  if (value > 180) return value - 360;
+  if (value < -180) return value + 360;
+  return value;
+}
+
+function clampLatitude(value: number): number {
+  return Math.max(-75, Math.min(75, value));
+}
+
+function resolveGeoCoords(key: string): GeoCoords {
+  const { countryCode, regionCode } = splitGeoKey(key);
+  const regionKey = countryCode && regionCode ? `${countryCode}-${regionCode}` : null;
+
+  if (regionKey && REGION_COORDS[regionKey]) {
+    return REGION_COORDS[regionKey];
+  }
+
+  const countryCoords = countryCode ? COUNTRY_COORDS[countryCode] : null;
+  if (!countryCoords) {
+    return { ...DEFAULT_GEO_COORDS, name: key || DEFAULT_GEO_COORDS.name };
+  }
+
+  if (!regionCode) {
+    return countryCoords;
+  }
+
+  const seed = hashString(regionKey || key);
+  const angle = ((seed % 360) * Math.PI) / 180;
+  const radius = 1.8 + ((seed >>> 8) % 160) / 100;
+  return {
+    name: `${countryCoords.name} / ${regionCode}`,
+    lat: clampLatitude(countryCoords.lat + Math.sin(angle) * radius * 0.7),
+    lon: wrapLongitude(countryCoords.lon + Math.cos(angle) * radius)
+  };
+}
 
 interface PublicDashboardProps {
   apiPrefix: string;
@@ -44,12 +147,12 @@ interface PublicDashboardProps {
 
 // ---- 3D Digital Earth Globe Component ----
 interface GlobeProps {
-  activeRegions: Record<string, number>;
+  geoBreakdown: Record<string, number>;
   totalInstances: number;
   apiPrefix: string;
 }
 
-function InteractiveGlobe({ activeRegions, totalInstances, apiPrefix }: GlobeProps) {
+function InteractiveGlobe({ geoBreakdown, totalInstances, apiPrefix }: GlobeProps) {
   const globeRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 600 });
@@ -100,16 +203,18 @@ function InteractiveGlobe({ activeRegions, totalInstances, apiPrefix }: GlobePro
   }, []);
 
   const { points, arcs } = useMemo(() => {
-    const pts = Object.entries(activeRegions).map(([code, count]) => {
-      const coords = COUNTRY_COORDS[code] || { name: code, lat: 35, lon: 105 };
-      return {
-        id: code,
-        name: coords.name,
-        lat: coords.lat,
-        lng: coords.lon,
-        count
-      };
-    });
+    const pts = Object.entries(geoBreakdown)
+      .filter(([key, count]) => key !== 'unknown' && Number(count) > 0)
+      .map(([key, count]) => {
+        const coords = resolveGeoCoords(key);
+        return {
+          id: key,
+          name: coords.name,
+          lat: coords.lat,
+          lng: coords.lon,
+          count
+        };
+      });
 
     let hub = pts[0];
     pts.forEach(p => {
@@ -125,7 +230,7 @@ function InteractiveGlobe({ activeRegions, totalInstances, apiPrefix }: GlobePro
     }));
 
     return { points: pts, arcs: a };
-  }, [activeRegions]);
+  }, [geoBreakdown]);
 
   const getTooltipHtml = (d: any) => `
     <div style="
@@ -772,7 +877,7 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
 
         <div className="hero-right">
           <InteractiveGlobe
-            activeRegions={ov.country_breakdown || {}}
+            geoBreakdown={ov.region_breakdown || ov.country_breakdown || {}}
             totalInstances={ov.total_instances || 1}
             apiPrefix={apiPrefix}
           />
