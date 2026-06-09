@@ -119,6 +119,28 @@ class CloudTelemetryAdminService:
                 _coerce_label(row.country_code): int(row.cnt) for row in country_rows
             }
 
+            region_rows = (
+                await session.execute(
+                    select(
+                        CloudTelemetryInstance.country_code,
+                        CloudTelemetryInstance.region_code,
+                        func.count().label("cnt"),
+                    ).group_by(
+                        CloudTelemetryInstance.country_code,
+                        CloudTelemetryInstance.region_code,
+                    )
+                )
+            ).all()
+            region_breakdown: dict[str, int] = {}
+            for row in region_rows:
+                region_key = _compose_region_key(
+                    row.country_code,
+                    row.region_code,
+                )
+                region_breakdown[region_key] = (
+                    int(region_breakdown.get(region_key, 0)) + int(row.cnt)
+                )
+
             suspended_count = int(
                 (
                     await session.execute(
@@ -139,6 +161,7 @@ class CloudTelemetryAdminService:
             gap_status_breakdown=gap_status_breakdown,
             platform_breakdown=platform_breakdown,
             country_breakdown=country_breakdown,
+            region_breakdown=region_breakdown,
             server_time=time.time(),
         )
 
@@ -610,6 +633,34 @@ def _coerce_label(value: Any) -> str:
         return "unknown"
     text = str(value)
     return text if text else "unknown"
+
+
+def _normalize_geo_code(value: Any) -> str | None:
+    """归一化地域代码，空值返回 None。"""
+
+    if value is None:
+        return None
+    text = str(value).strip().upper()
+    if not text or text == "UNKNOWN":
+        return None
+    return text
+
+
+def _compose_region_key(country_code: Any, region_code: Any) -> str:
+    """组合国家/省州聚合键。
+
+    - 同时存在国家和省州时返回 `CC-RR`
+    - 仅存在国家时返回 `CC`
+    - 无法确定国家时返回 `unknown`
+    """
+
+    country = _normalize_geo_code(country_code)
+    region = _normalize_geo_code(region_code)
+    if not country:
+        return "unknown"
+    if not region:
+        return country
+    return f"{country}-{region}"
 
 
 async def _find_instance_by_admin_identifier(

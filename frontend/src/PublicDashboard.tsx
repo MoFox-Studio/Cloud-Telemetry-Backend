@@ -5,8 +5,9 @@ import { fetchJson, fmtNum, fmtPct, fmtTime, fmtHour, fmtDate } from './utils';
 // @ts-ignore
 import ReactGlobe from 'react-globe.gl';
 import * as THREE from 'three';
-import BorderGlow from './components/BorderGlow';
 import ShinyText from './components/ShinyText';
+import MagicRings from './components/MagicRings';
+import BorderGlow from './components/BorderGlow';
 
 Chart.register(...registerables);
 
@@ -144,9 +145,49 @@ function InteractiveGlobe({ activeRegions, totalInstances, apiPrefix }: GlobePro
     </div>
   `;
 
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
-    <div className="earth-canvas-container" ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', minHeight: '600px' }}>
-      <ReactGlobe
+    <div 
+      className="earth-canvas-container" 
+      ref={containerRef} 
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        width: '350%',
+        height: '350%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }}>
+        <MagicRings
+          color="#6366f1"
+          colorTwo="#ec4899"
+          ringCount={5}
+          speed={0.6}
+          attenuation={15}
+          lineThickness={3}
+          opacity={0.7}
+          followMouse={true}
+          mouseInfluence={0.05}
+          baseRadius={0.12}
+          radiusStep={0.035}
+          scaleRate={0.03}
+        />
+      </div>
+      <div style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        zIndex: 1,
+        transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        transform: isHovered ? 'scale(1.08)' : 'scale(1)'
+      }}>
+        <ReactGlobe
         ref={globeRef}
         width={dimensions.width}
         height={dimensions.height}
@@ -186,7 +227,8 @@ function InteractiveGlobe({ activeRegions, totalInstances, apiPrefix }: GlobePro
         ringRepeatPeriod={1500}
         
         pointLabel={getTooltipHtml}
-      />
+        />
+      </div>
     </div>
   );
 }

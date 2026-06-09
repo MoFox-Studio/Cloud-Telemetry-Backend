@@ -10,6 +10,7 @@ import pytest
 from sqlalchemy import select
 
 from cloud_telemetry_backend.database import get_cloud_telemetry_database
+from cloud_telemetry_backend.geoip import GeoLookupResult
 from cloud_telemetry_backend.models import (
     CloudTelemetryAdminQueryAudit,
     CloudTelemetryInstance,
@@ -250,6 +251,7 @@ async def test_admin_overview_summary(
     assert payload["online_instances"] >= 1
     assert "platform_breakdown" in payload
     assert "country_breakdown" in payload
+    assert "region_breakdown" in payload
     assert "gap_status_breakdown" in payload
 
 
@@ -280,6 +282,35 @@ async def test_public_overview_and_frontend_pages(
     admin_page_response = await telemetry_client.get("/_cloud_telemetry/admin")
     assert admin_page_response.status_code == 200
     assert "Telemetry Admin" in admin_page_response.text
+
+
+@pytest.mark.asyncio
+async def test_public_overview_exposes_region_breakdown(
+    telemetry_client: httpx.AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """公开总览应暴露国家-省州级地域聚合。"""
+
+    from cloud_telemetry_backend import ingress as ingress_module
+
+    class _Resolver:
+        @staticmethod
+        def lookup(_: str | None) -> GeoLookupResult:
+            return GeoLookupResult(country_code="CN", region_code="SH")
+
+    monkeypatch.setattr(
+        ingress_module,
+        "get_geoip_resolver",
+        lambda: _Resolver(),
+    )
+
+    await _ensure_registered_instance(telemetry_client)
+    response = await telemetry_client.get(f"{PREFIX}/public/overview")
+    assert response.status_code == 200, response.text
+
+    payload = response.json()
+    assert payload["overview"]["country_breakdown"]["CN"] >= 1
+    assert payload["overview"]["region_breakdown"]["CN-SH"] >= 1
 
 
 @pytest.mark.asyncio

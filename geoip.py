@@ -81,12 +81,7 @@ class GeoIPResolver:
             return empty
 
         country_code = getattr(getattr(response, "country", None), "iso_code", None)
-        subdivision_code: str | None = None
-        subdivisions = getattr(response, "subdivisions", None)
-        if subdivisions is not None:
-            most_specific = getattr(subdivisions, "most_specific", None)
-            if most_specific is not None:
-                subdivision_code = getattr(most_specific, "iso_code", None)
+        subdivision_code = _extract_region_code(response)
 
         return GeoLookupResult(
             country_code=country_code,
@@ -173,3 +168,34 @@ def close_geoip_resolver() -> None:
     if _global_resolver is not None:
         _global_resolver.close()
         _global_resolver = None
+
+
+def _extract_region_code(response: Any) -> str | None:
+    """提取省/州级 subdivision code。
+
+    MaxMind City 库的 subdivisions 从大到小排列。为了稳定拿到“省/州”
+    这一层，这里优先取第一级 subdivision；若无法索引，再退回 most_specific。
+    """
+
+    subdivisions = getattr(response, "subdivisions", None)
+    if subdivisions is None:
+        return None
+
+    first_level = None
+    try:
+        if len(subdivisions) > 0:
+            first_level = subdivisions[0]
+    except Exception:
+        first_level = None
+
+    if first_level is not None:
+        code = getattr(first_level, "iso_code", None)
+        if code:
+            return str(code)
+
+    most_specific = getattr(subdivisions, "most_specific", None)
+    if most_specific is None:
+        return None
+
+    code = getattr(most_specific, "iso_code", None)
+    return str(code) if code else None

@@ -139,6 +139,38 @@ def test_geoip_resolver_handles_invalid_ip_gracefully() -> None:
     assert resolver.lookup(None) == GeoLookupResult(None, None)
 
 
+def test_geoip_resolver_prefers_first_level_subdivision_for_region() -> None:
+    """City 库存在两级 subdivision 时，应优先返回省/州这一层。"""
+
+    class _Subdivision:
+        def __init__(self, iso_code: str) -> None:
+            self.iso_code = iso_code
+
+    class _Subdivisions(tuple):
+        @property
+        def most_specific(self):
+            return self[-1]
+
+    class _Country:
+        iso_code = "GB"
+
+    class _Response:
+        country = _Country()
+        subdivisions = _Subdivisions((_Subdivision("ENG"), _Subdivision("DEV")))
+
+    class _Reader:
+        @staticmethod
+        def city(_: str) -> _Response:
+            return _Response()
+
+    resolver = GeoIPResolver(database_path="unused")
+    resolver._reader = _Reader()
+    resolver._initialized = True
+    resolver._enabled = True
+
+    assert resolver.lookup("8.8.8.8") == GeoLookupResult("GB", "ENG")
+
+
 def test_settings_default_geoip_path_uses_repo_root_database_when_present() -> None:
     """默认配置应在根目录 mmdb 存在时启用，否则保持空。"""
 

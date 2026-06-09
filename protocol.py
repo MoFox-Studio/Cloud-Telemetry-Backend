@@ -185,6 +185,7 @@ class CloudTelemetryAdminOverviewSummaryResponse(CloudTelemetryProtocolModel):
     gap_status_breakdown: dict[str, int]
     platform_breakdown: dict[str, int]
     country_breakdown: dict[str, int]
+    region_breakdown: dict[str, int]
     server_time: float
 
 
