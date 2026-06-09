@@ -275,8 +275,8 @@ function InteractiveGlobe({ geoBreakdown, totalInstances, apiPrefix }: GlobeProp
           ringCount={5}
           speed={0.6}
           attenuation={15}
-          lineThickness={3}
-          opacity={0.7}
+          lineThickness={2.5}
+          opacity={0.35}
           followMouse={true}
           mouseInfluence={0.05}
           baseRadius={0.12}
