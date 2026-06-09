@@ -6,6 +6,7 @@ import { fetchJson, fmtNum, fmtPct, fmtTime, fmtHour, fmtDate } from './utils';
 import ReactGlobe from 'react-globe.gl';
 import * as THREE from 'three';
 import BorderGlow from './components/BorderGlow';
+import ShinyText from './components/ShinyText';
 
 Chart.register(...registerables);
 
@@ -674,7 +675,9 @@ export default function PublicDashboard({ apiPrefix }: PublicDashboardProps) {
       {/* SECTION 1: HERO LANDING SCREEN (开屏首页) */}
       <section className="hero-section" id="section-hero">
         <div className="hero-left">
-          <h1 className="hero-title-gradient">社区遥测全局控制台</h1>
+          <h1 className="hero-title-gradient" style={{ background: 'none', WebkitTextFillColor: 'initial' }}>
+            <ShinyText text="社区遥测全局控制台" speed={3} color="#a5b4fc" shineColor="#ffffff" />
+          </h1>
           <p className="hero-subtitle">
             实时汇总来自全球 Neo-MoFox 用户的遥测分析指标。我们致力于以最高的技术透明度和对数据私密性的尊重，追踪平台服务的运行心跳与大语言模型的调用健康态势。
           </p>
